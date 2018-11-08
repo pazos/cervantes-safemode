@@ -1,0 +1,9 @@
+Package: safemode
+Version: 0.1.0
+Section: base
+Priority: optional
+Architecture: armel
+Maintainer: Martín Fernández <paziusss@gmail.com>
+Description: safemode for BQ Cervantes
+  Enable usbnet at boot if requested by pressing
+  the home button.
