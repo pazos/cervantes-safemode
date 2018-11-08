@@ -4,8 +4,7 @@
 
 It lets you enable network over usb and telnet at boot pressing the home button.
 
-It is not needed when running stock software but is handy if you're running 
-third party software, like KOReader, as the only application on your ereader.
+It is not needed when running stock software but is handy if you're running third party software, like KOReader, as the only application on your ereader.
 
 The application tries to catch home button press/release events for a few seconds.
 
@@ -17,10 +16,12 @@ call this app from /etc/rc.local just before starting your application.
 
 It can be used as a replacement of sleep in a loop, like:
 
+```
 while true; do
     /usr/bin/safemode && exit 1
     /mnt/private/koreader/koreader.sh
 done
+```
 
 ## How to enable safe mode once installed.
 
