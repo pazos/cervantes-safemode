@@ -16,15 +16,20 @@ all: fbink safemode package
 
 fbink:
 	cd FBInk && \
-	$(MAKE) cervantes strip MINIMAL=true
+	$(MAKE) cervantes strip
 
 safemode:
-	$(CC) $(SRCS) -LFBInk/Release -l:libfbink.a -o $(PROG)
+	$(CC) $(SRCS) -LFBInk/Release -l:libfbink.a -lm -o $(PROG)
 	$(STRIP) $(PROG)
 
 package:
 	mkdir -p pkg/usr/bin
 	cp safemode pkg/usr/bin
+	mkdir -p pkg/usr/share/safemode/scripts
+	cp scripts/*.sh pkg/usr/share/safemode/scripts
+	mkdir -p pkg/usr/share/safemode/images
+	cp images/*.png pkg/usr/share/safemode/images
+
 	dpkg-deb -b pkg/ .
 
 clean:
