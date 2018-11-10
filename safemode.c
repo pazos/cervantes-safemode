@@ -1,134 +1,118 @@
-/* safemode.c - turn on usbnet at boot on BQ Cervantes based on button events.
-   Copyright (C) 2018 Martín Fernández <paziusss@gmail.com>
-
-   This program is free software: you can redistribute it and/or modify
-   it under the terms of the GNU Affero General Public License as
-   published by the Free Software Foundation, either version 3 of the
-   License, or (at your option) any later version.
-
-   This program is distributed in the hope that it will be useful,
-   but WITHOUT ANY WARRANTY; without even the implied warranty of
-   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-   GNU Affero General Public License for more details.
-
-   You should have received a copy of the GNU Affero General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.
-*/
-
 #include <stdio.h>
-#include <fcntl.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <linux/input.h>
-#include "FBInk/fbink.h"
+#include <string.h>
+#include <fcntl.h>
 
-// time to wait for events, in milliseconds
+/* use FBInk to print stuff on screen */
+#include "FBInk/fbink.h"
+FBInkConfig fb = { 0 };
+
+/* input events */
+#include <linux/input.h>
+#define KEYPAD  "/dev/input/event0"
+
+/* wait for events timeout */
 #define TIMEOUT 2000
 
-// event code for BQ Cervantes home button
-#define BTN_HOME 61
-
-// keypad present on Kobos & Cervantes
-#define EB600_KEYPAD "/dev/input/event0"
-
-// usbnet config (from /usr/bin/usbup.sh)
-#define IP_ADDR	"192.168.4.1"
-#define NETMASK	"255.255.255.0"
-#define MAC_ADDR "2a:0f:11:21:85:df"
-
-// use FBInk to write stuff to the screen.
-FBInkConfig fbink_config = { 0 };
-
-static void
-    init_fbink_config(void)
+int main(int argc, char** argv)
 {
-    fbink_config.row 		= 8;
-    fbink_config.is_centered 	= true;
-    fbink_config.is_cleared	= true;
-    fbink_config.is_padded	= true;
-    fbink_config.is_quiet	= true;
-}
+    int fd, ret;
+    int count = 0;
+    int steps = TIMEOUT/10;
+    struct input_event ev;
+    enum usb_modes { usbnet, usbms } mode;
 
-// returns SUCESS if safemode was enabled, FAILURE otherwise.
-int main(void)
-{
-    int fd;
-    int retval = 0;
-    int counter = 0;
-    char command[80];
-    struct input_event event;
-
-    // Open input device.
-    if ((fd = open(EB600_KEYPAD, O_RDONLY | O_NONBLOCK)) == -1)
-    {
-        fprintf(stderr, "Failed to open %s, aborting!\n", EB600_KEYPAD);
+    // read mode from first argument
+    if ((argc > 1) && (strcmp(argv[1], "network") == 0)) {
+        mode = usbnet;
+    } else if ((argc > 1) && (strcmp(argv[1], "storage") == 0)) {
+        mode = usbms;
+    } else {
+        fprintf(stderr, "Usage: %s [network|storage]\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
-    // Initialize fbink
-    init_fbink_config();
-    if (fbink_init(FBFD_AUTO, &fbink_config) != EXIT_SUCCESS)
-    {
+    // open input device.
+    if ((fd = open(KEYPAD, O_RDONLY | O_NONBLOCK)) == -1) {
+        fprintf(stderr, "Failed to open %s, aborting!\n", KEYPAD);
+        exit(EXIT_FAILURE);
+    }
+
+    // initialize FBInk
+    if (fbink_init(FBFD_AUTO, &fb) != EXIT_SUCCESS) {
 	fprintf(stderr, "Failed to initialize FBInk, aborting!\n");
         exit(EXIT_FAILURE);
     }
 
-    // Clear the screen as visual feedback before starting the loop
-    fbink_printf(FBFD_AUTO, NULL, &fbink_config, "");
-
-    // Main loop waiting for home button events.
-    fprintf(stdout, "Waiting for home key during %d seconds ...\n", TIMEOUT/1000);
-    while (1)
-    {
-        // we don't care about event.value here, so we catch both press and release events.
-        if ((read(fd, &event, sizeof(struct input_event)) != -1) && (event.code == BTN_HOME)) {
-            retval = 1;
+    // start loop waiting for events.
+    fprintf(stdout, "Waiting for home button press during %d seconds ...\n", TIMEOUT/1000);
+    while (1) {
+        if (count == 0) {
+            fb.row = -2;
+            fb.is_centered = true;
+            fbink_printf(FBFD_AUTO, NULL, &fb, ".");
+        } else if (count == steps * 2) {
+            fbink_printf(FBFD_AUTO, NULL, &fb, "..");
+        } else if (count == steps * 4) {
+            fbink_printf(FBFD_AUTO, NULL, &fb, "...");
+        } else if (count == steps * 6) {
+            fbink_printf(FBFD_AUTO, NULL, &fb, "....");
+        } else if (count == steps * 8) {
+            fbink_printf(FBFD_AUTO, NULL, &fb, ".....");
+        } else if (count == TIMEOUT) {
+            fbink_printf(FBFD_AUTO, NULL, &fb, "     ");
+            ret = 0;
             break;
         }
-
-        // counter is meassured in milliseconds, usleep uses microseconds.
-        counter++;
-        usleep(1000);
-
-        // break the loop if we reach the timeout.
-        if (counter > TIMEOUT) {
+        // break on home button press event
+        if ((read(fd, &ev, sizeof(struct input_event)) != -1)
+                && (ev.code == 61) && (ev.value == 1)) {
+            ret = 1;
             break;
         }
+        count++;
+        usleep(1000); // microseconds
     }
 
-    close(fd);
-    if (retval == 1) {
-        // Use safemode (usbnet)
-        fbink_config.is_cleared = false;
-        fbink_printf(FBFD_AUTO, NULL, &fbink_config, "starting usbnet");
-        fprintf(stdout, "home key pressed -> starting usbnet\n");
+    if (ret == 1) {
+        // start usb gadget
+        fprintf(stdout, "button pressed, starting %s mode, press the button again to stop it\n", argv[1]);
+        fb.row = 0;
+        fb.halign = CENTER;
+        fb.valign = CENTER;
+        fb.is_cleared = true;
+        fb.is_flashing = true;
+        if (mode == usbnet) {
+            fbink_print_image(FBFD_AUTO, "/usr/share/safemode/images/usbnet.png", 0, 0, &fb);
+            system("/usr/share/safemode/scripts/enable-usbnet.sh\n");
+        } else if (mode == usbms) {
+            fbink_print_image(FBFD_AUTO, "/usr/share/safemode/images/usbms.png", 0, 0, &fb);
+            system("/usr/share/safemode/scripts/enable-usbms.sh\n");
+        }
 
-        // print usbnet config on screen
-        fbink_config.row = fbink_config.row + 2;
-        fbink_printf(FBFD_AUTO, NULL, &fbink_config, "ip addr: %s", IP_ADDR);
-        fbink_config.row++;
-        fbink_printf(FBFD_AUTO, NULL, &fbink_config, "netmask: %s", NETMASK);
-        fbink_config.row++;
-        fbink_printf(FBFD_AUTO, NULL, &fbink_config, "mac addr: %s", MAC_ADDR);
-
-        // load kernel modules
-        sprintf(command, "modprobe arcotg_udc\n");
-        system(command);
-        sprintf(command, "modprobe g_ether host_addr=%s\n", MAC_ADDR);
-        system(command);
-
-        // bring up network interface
-        sprintf(command, "ifconfig usb0 inet %s netmask %s\n", IP_ADDR, NETMASK);
-        system(command);
-
-        // start telnet via inet daemon
-        sprintf(command, "/usr/sbin/inetd");
-        system(command);
-
-        // exit with error means stopping /etc/rc.local execution before starting
-        // the main application and it is what we want here.
+        // wait for another home button press event, this time without timeout.
+        while (1) {
+            usleep(1000);
+            // break on home button press event
+            if ((read(fd, &ev, sizeof(struct input_event)) != -1)
+                    && (ev.code == 61) && (ev.value == 1)) {
+                break;
+            }
+        }
+        // stop usb gadget
+        fprintf(stdout, "button pressed, stopping %s mode\n", argv[1]);
+        if (mode == usbnet) {
+            system("/usr/share/safemode/scripts/disable-usbnet.sh\n");
+        } else if (mode == usbms) {
+            system("/usr/share/safemode/scripts/disable-usbms.sh\n");
+        }
+        close(fd);
+        fbink_printf(FBFD_AUTO, NULL, &fb, " ");
         exit(EXIT_SUCCESS);
     } else {
-        exit(EXIT_FAILURE);
+        // timeout without event, nothing to do!
+        close(fd);
+        exit(EXIT_SUCCESS);
     }
 }
