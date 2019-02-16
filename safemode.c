@@ -45,39 +45,44 @@ int main(int argc, char** argv)
         exit(EXIT_FAILURE);
     }
 
-    // start loop waiting for events.
-    fprintf(stdout, "Waiting for home button press during %d seconds ...\n", TIMEOUT/1000);
-    while (1) {
-        if (count == 0) {
-            fb.row = -2;
-            fb.is_centered = true;
-            fbink_printf(FBFD_AUTO, NULL, &fb, ".");
-        } else if (count == steps * 2) {
-            fbink_printf(FBFD_AUTO, NULL, &fb, "..");
-        } else if (count == steps * 4) {
-            fbink_printf(FBFD_AUTO, NULL, &fb, "...");
-        } else if (count == steps * 6) {
-            fbink_printf(FBFD_AUTO, NULL, &fb, "....");
-        } else if (count == steps * 8) {
-            fbink_printf(FBFD_AUTO, NULL, &fb, ".....");
-        } else if (count == TIMEOUT) {
-            fbink_printf(FBFD_AUTO, NULL, &fb, "     ");
-            ret = 0;
-            break;
+    // we can force-entering a mode and skip button presses
+    if ((argc > 2) && (strcmp(argv[2], "--force") == 0)) {
+        ret = 1;
+    } else {
+        // or we can start a loop waiting for events instead..
+        fprintf(stdout, "Waiting for home button press during %d seconds ...\n", TIMEOUT/1000);
+        while (1) {
+            if (count == 0) {
+                fb.row = -2;
+                fb.is_centered = true;
+                fbink_printf(FBFD_AUTO, NULL, &fb, ".");
+            } else if (count == steps * 2) {
+                fbink_printf(FBFD_AUTO, NULL, &fb, "..");
+            } else if (count == steps * 4) {
+                fbink_printf(FBFD_AUTO, NULL, &fb, "...");
+            } else if (count == steps * 6) {
+                fbink_printf(FBFD_AUTO, NULL, &fb, "....");
+            } else if (count == steps * 8) {
+                fbink_printf(FBFD_AUTO, NULL, &fb, ".....");
+            } else if (count == TIMEOUT) {
+                fbink_printf(FBFD_AUTO, NULL, &fb, "     ");
+                ret = 0;
+                break;
+            }
+            // break on home button press event
+            if ((read(fd, &ev, sizeof(struct input_event)) != -1)
+                    && (ev.code == 61) && (ev.value == 1)) {
+                ret = 1;
+                break;
+            }
+            count++;
+            usleep(1000); // microseconds
         }
-        // break on home button press event
-        if ((read(fd, &ev, sizeof(struct input_event)) != -1)
-                && (ev.code == 61) && (ev.value == 1)) {
-            ret = 1;
-            break;
-        }
-        count++;
-        usleep(1000); // microseconds
     }
 
     if (ret == 1) {
         // start usb gadget
-        fprintf(stdout, "button pressed, starting %s mode, press the button again to stop it\n", argv[1]);
+        fprintf(stdout, "starting %s mode, press the button to stop it\n", argv[1]);
         fb.row = 0;
         fb.halign = CENTER;
         fb.valign = CENTER;
