@@ -29,8 +29,8 @@ package:
 	cp scripts/*.sh pkg/usr/share/safemode/scripts
 	mkdir -p pkg/usr/share/safemode/images
 	cp images/*.png pkg/usr/share/safemode/images
-
-	dpkg-deb -b pkg/ .
+	touch pkg/usr/share/safemode/version
+	dpkg-deb -Z gzip -b pkg/ .
 
 clean:
 	cd FBInk && \
