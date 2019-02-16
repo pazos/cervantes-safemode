@@ -8,10 +8,11 @@ Unneeded if you're running stock, it can be useful with thirdparty software
 
 ## Usage
 
-`safemode [network|storage]`
+`safemode [network|storage] (--force)`
 
-Call this tool from /etc/rc.local  to provide an early usbnet connection, even before starting the main application:
-`safemode network`
+### Examples
+
+Call this tool from /etc/rc.local to provide an early usbnet connection: `safemode network`
 
 Use it inside loops:
 ```
@@ -22,6 +23,7 @@ done
 ```
 You can tune the TIMEOUT constant to fit your needs.
 
+You can enter requested mode without confirmation using `safemode network --force` and `safemode storage --forcep`
 
 ## How to enter/leave safemode once installed.
 
