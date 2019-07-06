@@ -70,17 +70,17 @@ int
             if (count == 0) {
                 fb.row         = -2;
                 fb.is_centered = true;
-                fbink_printf(fbfd, NULL, &fb, ".");
+                fbink_print(fbfd, ".", &fb);
             } else if (count == steps * 2) {
-                fbink_printf(fbfd, NULL, &fb, "..");
+                fbink_print(fbfd, "..", &fb);
             } else if (count == steps * 4) {
-                fbink_printf(fbfd, NULL, &fb, "...");
+                fbink_print(fbfd, "...", &fb);
             } else if (count == steps * 6) {
-                fbink_printf(fbfd, NULL, &fb, "....");
+                fbink_print(fbfd, "....", &fb);
             } else if (count == steps * 8) {
-                fbink_printf(fbfd, NULL, &fb, ".....");
+                fbink_print(fbfd, ".....", &fb);
             } else if (count == TIMEOUT) {
-                fbink_printf(fbfd, NULL, &fb, "     ");
+                fbink_print(fbfd, "     ", &fb);
                 ret = 0;
                 break;
             }
@@ -125,7 +125,7 @@ int
         } else if (mode == usbms) {
             system("/usr/share/safemode/scripts/disable-usbms.sh");
         }
-        fbink_printf(fbfd, NULL, &fb, " ");
+        fbink_print(fbfd, " ", &fb);    // FIXME: Not sure what the intent is here? fbink_cls, maybe?
         rv = EXIT_SUCCESS;
         goto cleanup;
     } else {
