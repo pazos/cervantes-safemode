@@ -139,7 +139,7 @@ int
 cleanup:
     close(fd);
 
-    if (fbink_close(fbfd) == ERRCODE(EXIT_FAILURE)) {
+    if (fbink_close(fbfd) != EXIT_SUCCESS) {
         fprintf(stderr, "Failed to close the framebuffer, aborting . . .\n");
         rv = EXIT_FAILURE;
     }
