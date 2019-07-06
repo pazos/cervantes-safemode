@@ -96,7 +96,7 @@ int
 
     if (ret == 1) {
         // start usb gadget
-        fprintf(stdout, "starting %s mode, press the button to stop it\n", argv[1]);
+        fprintf(stdout, "Starting %s mode, press the button to stop it\n", argv[1]);
         fb.row         = 0;
         fb.halign      = CENTER;
         fb.valign      = CENTER;
@@ -119,7 +119,7 @@ int
             }
         }
         // stop usb gadget
-        fprintf(stdout, "button pressed, stopping %s mode\n", argv[1]);
+        fprintf(stdout, "Button pressed, stopping %s mode\n", argv[1]);
         if (mode == usbnet) {
             system("/usr/share/safemode/scripts/disable-usbnet.sh");
         } else if (mode == usbms) {
