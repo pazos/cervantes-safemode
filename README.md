@@ -45,4 +45,4 @@ make
 
 ## Thanks
 
-To @NiLuJe for [FBInk](https://github.com/NiLuJe/FBInk) and to BQ for [fulfill Qt opensource license](https://github.com/search?q=org%3Abq+cervantes&unscoped_q=cervantes)
+To @NiLuJe for [FBInk](https://github.com/NiLuJe/FBInk) and to BQ for [honoring the Qt opensource license](https://github.com/search?q=org%3Abq+cervantes&unscoped_q=cervantes)
