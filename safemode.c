@@ -1,8 +1,8 @@
+#include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <string.h>
-#include <fcntl.h>
+#include <unistd.h>
 
 /* use FBInk to print stuff on screen */
 #include "FBInk/fbink.h"
@@ -10,18 +10,23 @@ FBInkConfig fb = { 0 };
 
 /* input events */
 #include <linux/input.h>
-#define KEYPAD  "/dev/input/event0"
+#define KEYPAD "/dev/input/event0"
 
 /* wait for events timeout */
 #define TIMEOUT 2000
 
-int main(int argc, char** argv)
+int
+  main(int argc, char** argv)
 {
-    int fd, ret;
-    int count = 0;
-    int steps = TIMEOUT/10;
+    int                fd, ret;
+    int                count = 0;
+    int                steps = TIMEOUT / 10;
     struct input_event ev;
-    enum usb_modes { usbnet, usbms } mode;
+    enum usb_modes
+    {
+        usbnet,
+        usbms
+    } mode;
 
     // read mode from first argument
     if ((argc > 1) && (strcmp(argv[1], "network") == 0)) {
@@ -41,7 +46,7 @@ int main(int argc, char** argv)
 
     // initialize FBInk
     if (fbink_init(FBFD_AUTO, &fb) != EXIT_SUCCESS) {
-	fprintf(stderr, "Failed to initialize FBInk, aborting!\n");
+        fprintf(stderr, "Failed to initialize FBInk, aborting!\n");
         exit(EXIT_FAILURE);
     }
 
@@ -50,10 +55,10 @@ int main(int argc, char** argv)
         ret = 1;
     } else {
         // or we can start a loop waiting for events instead..
-        fprintf(stdout, "Waiting for home button press during %d seconds ...\n", TIMEOUT/1000);
+        fprintf(stdout, "Waiting for home button press during %d seconds ...\n", TIMEOUT / 1000);
         while (1) {
             if (count == 0) {
-                fb.row = -2;
+                fb.row         = -2;
                 fb.is_centered = true;
                 fbink_printf(FBFD_AUTO, NULL, &fb, ".");
             } else if (count == steps * 2) {
@@ -70,23 +75,22 @@ int main(int argc, char** argv)
                 break;
             }
             // break on home button press event
-            if ((read(fd, &ev, sizeof(struct input_event)) != -1)
-                    && (ev.code == 61) && (ev.value == 1)) {
+            if ((read(fd, &ev, sizeof(struct input_event)) != -1) && (ev.code == 61) && (ev.value == 1)) {
                 ret = 1;
                 break;
             }
             count++;
-            usleep(1000); // microseconds
+            usleep(1000);    // microseconds
         }
     }
 
     if (ret == 1) {
         // start usb gadget
         fprintf(stdout, "starting %s mode, press the button to stop it\n", argv[1]);
-        fb.row = 0;
-        fb.halign = CENTER;
-        fb.valign = CENTER;
-        fb.is_cleared = true;
+        fb.row         = 0;
+        fb.halign      = CENTER;
+        fb.valign      = CENTER;
+        fb.is_cleared  = true;
         fb.is_flashing = true;
         if (mode == usbnet) {
             fbink_print_image(FBFD_AUTO, "/usr/share/safemode/images/usbnet.png", 0, 0, &fb);
@@ -100,8 +104,7 @@ int main(int argc, char** argv)
         while (1) {
             usleep(1000);
             // break on home button press event
-            if ((read(fd, &ev, sizeof(struct input_event)) != -1)
-                    && (ev.code == 61) && (ev.value == 1)) {
+            if ((read(fd, &ev, sizeof(struct input_event)) != -1) && (ev.code == 61) && (ev.value == 1)) {
                 break;
             }
         }
