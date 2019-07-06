@@ -43,6 +43,9 @@ int
         exit(EXIT_FAILURE);
     }
 
+    // Assume success by default
+    int rv = EXIT_SUCCESS;
+
     // initialize FBInk
     int fbfd = -1;
     if ((fbfd = fbink_open()) == -1) {
@@ -57,9 +60,6 @@ int
         rv = EXIT_FAILURE;
         goto cleanup;
     }
-
-    // Assume success by default
-    int rv = EXIT_SUCCESS;
 
     // we can force-entering a mode and skip button presses
     if ((argc > 2) && (strcmp(argv[2], "--force") == 0)) {
