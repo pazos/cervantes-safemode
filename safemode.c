@@ -47,14 +47,15 @@ int
     int fbfd = -1;
     if ((fbfd = fbink_open()) == -1) {
         fprintf(stderr, "Failed to open the framebuffer, aborting . . .\n");
-        exit(EXIT_FAILURE);
+        rv = EXIT_FAILURE;
+        goto cleanup;
     }
 
     FBInkConfig fb = { 0 };
     if (fbink_init(fbfd, &fb) != EXIT_SUCCESS) {
         fprintf(stderr, "Failed to initialize FBInk, aborting!\n");
-        fbink_close(fbfd);
-        exit(EXIT_FAILURE);
+        rv = EXIT_FAILURE;
+        goto cleanup;
     }
 
     // Assume success by default
