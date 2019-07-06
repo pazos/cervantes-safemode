@@ -104,10 +104,10 @@ int
         fb.is_flashing = true;
         if (mode == usbnet) {
             fbink_print_image(fbfd, "/usr/share/safemode/images/usbnet.png", 0, 0, &fb);
-            system("/usr/share/safemode/scripts/enable-usbnet.sh\n");
+            system("/usr/share/safemode/scripts/enable-usbnet.sh");
         } else if (mode == usbms) {
             fbink_print_image(fbfd, "/usr/share/safemode/images/usbms.png", 0, 0, &fb);
-            system("/usr/share/safemode/scripts/enable-usbms.sh\n");
+            system("/usr/share/safemode/scripts/enable-usbms.sh");
         }
 
         // wait for another home button press event, this time without timeout.
@@ -121,9 +121,9 @@ int
         // stop usb gadget
         fprintf(stdout, "button pressed, stopping %s mode\n", argv[1]);
         if (mode == usbnet) {
-            system("/usr/share/safemode/scripts/disable-usbnet.sh\n");
+            system("/usr/share/safemode/scripts/disable-usbnet.sh");
         } else if (mode == usbms) {
-            system("/usr/share/safemode/scripts/disable-usbms.sh\n");
+            system("/usr/share/safemode/scripts/disable-usbms.sh");
         }
         fbink_printf(fbfd, NULL, &fb, " ");
         rv = EXIT_SUCCESS;
