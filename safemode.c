@@ -6,7 +6,6 @@
 
 /* use FBInk to print stuff on screen */
 #include "FBInk/fbink.h"
-FBInkConfig fb = { 0 };
 
 /* input events */
 #include <linux/input.h>
@@ -45,10 +44,21 @@ int
     }
 
     // initialize FBInk
-    if (fbink_init(FBFD_AUTO, &fb) != EXIT_SUCCESS) {
-        fprintf(stderr, "Failed to initialize FBInk, aborting!\n");
+    int fbfd = -1;
+    if ((fbfd = fbink_open()) == -1) {
+        fprintf(stderr, "Failed to open the framebuffer, aborting . . .\n");
         exit(EXIT_FAILURE);
     }
+
+    FBInkConfig fb = { 0 };
+    if (fbink_init(fbfd, &fb) != EXIT_SUCCESS) {
+        fprintf(stderr, "Failed to initialize FBInk, aborting!\n");
+        fbink_close(fbfd);
+        exit(EXIT_FAILURE);
+    }
+
+    // Assume success by default
+    int rv = EXIT_SUCCESS;
 
     // we can force-entering a mode and skip button presses
     if ((argc > 2) && (strcmp(argv[2], "--force") == 0)) {
@@ -60,17 +70,17 @@ int
             if (count == 0) {
                 fb.row         = -2;
                 fb.is_centered = true;
-                fbink_printf(FBFD_AUTO, NULL, &fb, ".");
+                fbink_printf(fbfd, NULL, &fb, ".");
             } else if (count == steps * 2) {
-                fbink_printf(FBFD_AUTO, NULL, &fb, "..");
+                fbink_printf(fbfd, NULL, &fb, "..");
             } else if (count == steps * 4) {
-                fbink_printf(FBFD_AUTO, NULL, &fb, "...");
+                fbink_printf(fbfd, NULL, &fb, "...");
             } else if (count == steps * 6) {
-                fbink_printf(FBFD_AUTO, NULL, &fb, "....");
+                fbink_printf(fbfd, NULL, &fb, "....");
             } else if (count == steps * 8) {
-                fbink_printf(FBFD_AUTO, NULL, &fb, ".....");
+                fbink_printf(fbfd, NULL, &fb, ".....");
             } else if (count == TIMEOUT) {
-                fbink_printf(FBFD_AUTO, NULL, &fb, "     ");
+                fbink_printf(fbfd, NULL, &fb, "     ");
                 ret = 0;
                 break;
             }
@@ -93,10 +103,10 @@ int
         fb.is_cleared  = true;
         fb.is_flashing = true;
         if (mode == usbnet) {
-            fbink_print_image(FBFD_AUTO, "/usr/share/safemode/images/usbnet.png", 0, 0, &fb);
+            fbink_print_image(fbfd, "/usr/share/safemode/images/usbnet.png", 0, 0, &fb);
             system("/usr/share/safemode/scripts/enable-usbnet.sh\n");
         } else if (mode == usbms) {
-            fbink_print_image(FBFD_AUTO, "/usr/share/safemode/images/usbms.png", 0, 0, &fb);
+            fbink_print_image(fbfd, "/usr/share/safemode/images/usbms.png", 0, 0, &fb);
             system("/usr/share/safemode/scripts/enable-usbms.sh\n");
         }
 
@@ -115,12 +125,23 @@ int
         } else if (mode == usbms) {
             system("/usr/share/safemode/scripts/disable-usbms.sh\n");
         }
-        close(fd);
-        fbink_printf(FBFD_AUTO, NULL, &fb, " ");
-        exit(EXIT_SUCCESS);
+        fbink_printf(fbfd, NULL, &fb, " ");
+        rv = EXIT_SUCCESS;
+        goto cleanup;
     } else {
         // timeout without event, nothing to do!
-        close(fd);
-        exit(EXIT_SUCCESS);
+        rv = EXIT_SUCCESS;
+        goto cleanup;
     }
+
+    // Cleanup
+cleanup:
+    close(fd);
+
+    if (fbink_close(fbfd) == ERRCODE(EXIT_FAILURE)) {
+        fprintf(stderr, "Failed to close the framebuffer, aborting . . .\n");
+        rv = EXIT_FAILURE;
+    }
+
+    return rv;
 }
