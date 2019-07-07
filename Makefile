@@ -40,10 +40,10 @@ default: all
 all: fbink safemode package
 
 fbink:
-	$(MAKE) -C FBInk cervantes
+	$(MAKE) -C FBInk staticlib CERVANTES=true MINIMAL=true IMAGE=true
 
 safemode:
-	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -LFBInk/Release -o$(PROG) $(SRCS) -l:libfbink.a -lm
+	$(CC) $(CPPFLAGS) $(EXTRA_CPPFLAGS) $(CFLAGS) $(EXTRA_CFLAGS) $(LDFLAGS) $(EXTRA_LDFLAGS) -LFBInk/Release -o$(PROG) $(SRCS) -l:libfbink.a
 	$(STRIP) --strip-unneeded $(PROG)
 
 package:
