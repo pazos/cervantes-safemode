@@ -126,7 +126,7 @@ int
         } else if (mode == usbms) {
             system("/usr/share/safemode/scripts/disable-usbms.sh");
         }
-        fbink_print(fbfd, " ", &fb);    // FIXME: Not sure what the intent is here? fbink_cls, maybe?
+        fbink_print(fbfd, "     ", &fb);
         rv = EXIT_SUCCESS;
         goto cleanup;
     } else {
